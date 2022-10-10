@@ -1,0 +1,187 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[651]:
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn import model_selection, preprocessing ,metrics
+
+
+# In[652]:
+
+
+data = pd.read_csv("diabetes.csv")
+# print(data.shape)
+
+
+# In[653]:
+
+
+x= data.iloc[:, :-1] #independent Variable
+y= data.iloc[:, -1] #dependent variable
+std_scaler = preprocessing.StandardScaler()
+# print(x)
+# print('---------------------')
+x=std_scaler.fit_transform(x)
+# print(x)
+# print('---------------------')
+x = preprocessing.normalize(x, norm='l2')
+# print(x)
+
+
+# In[654]:
+
+
+x_train,x_rem,y_train,y_rem = model_selection.train_test_split(x,y,train_size = 0.60)
+x_val,x_test,y_val,y_test = model_selection.train_test_split(x_rem,y_rem,test_size = 0.50)
+# print(x_train.shape)
+# print(y_train.shape)
+# print(x_test.shape)
+# print(y_test.shape)
+# print(x_val.shape)
+# print(y_val.shape)
+x_train = np.array(x_train.T)
+x_rem = np.array(x_rem.T)
+x_test = np.array(x_test.T)
+x_val = np.array(x_val.T)
+
+y_train = np.array(y_train).reshape(1, y_train.shape[0])
+y_rem = np.array(y_rem).reshape(1, y_rem.shape[0])
+y_test = np.array(y_test).reshape(1, y_test.shape[0])
+y_val = np.array(y_val).reshape(1, y_val.shape[0])
+# print(x_train.shape)
+# print(y_train.shape)
+# print(x_test.shape)
+# print(y_test.shape)
+# print(x_val.shape)
+# print(y_val.shape)
+
+
+# In[655]:
+
+
+def sigmoidFunction(input):
+    output = 1 / (1 + np.exp(-input))
+    return output
+
+def predictionFunction(x, weight, bias):
+    y_predValue = sigmoidFunction(np.dot(weight.T,x)+bias) >= 1/2
+    return y_predValue
+
+def accuracyFunction(y_actualValue, y_predValue):
+#     accuracy = (1 - np.sum(np.absolute(y_predValue - y_actualValue))/y_actualValue.shape[0])*100
+    accuracy =  metrics.accuracy_score(y_actualValue, y_predValue)
+    return accuracy 
+
+def costFunction(m_value,y_value,sigma):
+    loss = -1/m_value * np.sum(y_value * np.log(sigma) + (1 - y_value) * np.log(1-sigma))
+    return loss
+
+
+# In[656]:
+
+
+# Weight = np.random.rand(x_train.shape[0],1)
+# bias = np.random.rand()
+Weight = np.zeros((x_train.shape[0],1))
+print(Weight)
+bias = 0
+epochs =33000
+learning_rate = 0.01
+
+
+# In[657]:
+
+
+loss_training = []
+loss_validation = []
+accuracy_training = []
+accuracy_validation = []
+accuracy_test = []
+m_training = x_train.shape[1]
+m_validation = x_val.shape[1]
+
+for epoch in range(epochs):
+    
+    Z = np.dot(Weight.T, x_train) + bias
+    sigma = sigmoidFunction(Z)
+    
+    loss_training.append(costFunction(m_training,y_train,sigma))
+    
+    dZ = sigma - y_train
+    dWeight = (1/m_training) * np.dot(x_train, dZ.T)
+    dBias = (1/m_training) * np.sum(dZ)
+    
+    Weight = Weight - learning_rate * dWeight
+    bias = bias - learning_rate * dBias
+    
+    y_pred_val = sigmoidFunction(np.dot(Weight.T, x_val) + bias)
+    loss_validation.append(costFunction(m_validation,y_val,y_pred_val))
+    
+    y_pred_train = predictionFunction(x_train, Weight, bias)
+    accuracy_training.append(accuracyFunction(y_train[0], y_pred_train[0]))
+    
+    y_pred_val = predictionFunction(x_val, Weight, bias)
+    accuracy_validation.append(accuracyFunction(y_val[0], y_pred_val[0]))
+    
+    y_pred_test = predictionFunction(x_test, Weight, bias)
+    accuracy_test.append(accuracyFunction(y_test[0], y_pred_test[0]))
+    
+
+
+# In[658]:
+
+
+print("training accuracy-", accuracyFunction(y_train[0], y_pred_train[0])*100)
+print("validation accuracy -", accuracyFunction(y_val[0], y_pred_val[0])*100)
+print("testing accuracy -", accuracyFunction(y_test[0], y_pred_test[0])*100)
+
+
+# In[659]:
+
+
+plt.plot(range(epochs), loss_training, color='blue', label='training')
+plt.plot(range(epochs), loss_validation, color='red', label='validation')
+plt.title('Comparison of training and validation loss, learning rate is '+str(learning_rate))
+plt.xlabel('Number of epochs')
+plt.ylabel('Loss')
+plt.legend(loc='upper right')
+plt.show()
+
+plt.plot(range(epochs), accuracy_training, color='blue',  label='training')
+plt.plot(range(epochs), accuracy_validation, color='red',   label='validation')
+plt.title('Comparison of training and validation accuracy, learning rate is '+str(learning_rate))
+plt.xlabel('Number of epochs')
+plt.ylabel('Accuracy')
+plt.legend(loc='upper left')
+plt.show()
+
+
+# In[660]:
+
+
+plt.plot(range(epochs), accuracy_training, color='blue',  label='training')
+plt.plot(range(epochs), accuracy_validation, color='red',   label='validation')
+plt.title('Comparison of training and validation accuracy, learning rate is '+str(learning_rate))
+plt.xlabel('Number of epochs')
+plt.ylabel('Accuracy')
+plt.legend(loc='upper left')
+plt.show()
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
